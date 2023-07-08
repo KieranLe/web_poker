@@ -1,0 +1,549 @@
+<!doctype html>
+<html>
+<meta charset="utf-8">
+
+<head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <title>CSE3310 Websocket Example</title>
+  <link rel="stylesheet" href="page_style.css">
+</head>
+
+<body>
+  <p> Scroll down to see gamestate </p>
+  <p>message: <input id="send_text" type="text">
+    <input type="button" name="send_button" value="send" onclick="send()">
+  </p>
+  <div id="playerStats"></div>
+  <div id="nameInput">
+    <p>name: <input id="sendName" type="text">
+      <input type="button" name="sendName" value="Name" onclick="sendName()">
+    </p>
+  </div>
+  <div id="startingAmount">
+  <p>Input Starting Amount: <input id="startingamount" type="text">
+    <input type="button" name="startingamount" value="STARTINGAMOUNT" onclick="startAmount()">
+  </p>
+  </div>
+  <div id="ready">
+    <button class="button" type="ready" onclick="ready()">READY</button>
+  </div>
+  <img id="card1" class="card" src="3C.svg" style="width:auto;">
+  <img id="card2" class="card" src="3D.svg" style="width:auto;">
+  <img id="card3" class="card" src="3H.svg" style="width:auto;">
+  <img id="card4" class="card" src="4C.svg" style="width:auto;">
+  <img id="card5" class="card" src="5C.svg" style="width:auto;">
+  
+
+  <div id="button-row">
+    <button class="button" type="button" onclick="call()">CALL</button>
+    <!--<button input id ="bet" class="button" name = "bet" type="button" onclick="bet()">BET</button>
+    <button input id ="check" class="button" name = "check" type="button" onclick="check()">CHECK</button>-->
+    <p>amount: <input id="raise" type="text">
+      <input type="button" name="raise" value="RAISE" onclick="raise()">
+    </p>
+    <button class="button" type="button" onclick="fold()">FOLD</button>
+  </div>
+
+  <div id="button-row2">
+    <button class="button" type="button" onclick="draw()">DRAW</button>
+    <button class="button" type="button" onclick="stand()">STAND</button>
+  </div>
+  <!-- will print out winning results Maybe show other players cards if i have time-->
+  <div id="textbox"></div>
+  
+</body>
+
+<style>
+  div.scroll {
+    background-color: #fed9ff;
+    max-width: 600px;
+    height: 150px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    text-align: center;
+    padding: 20px;
+  }
+</style>
+
+  <!-- Part of this is unnecessary but I'm keeping it because Im too small brain-->
+  <style>
+    body {font-family: Arial, Helvetica, sans-serif;}
+    * {box-sizing: border-box;}
+    
+    /* Button used to open the chat form - fixed at the bottom of the page */
+    .open-button {
+      background-color: #555;
+      color: white;
+      padding: 16px 20px;
+      border: none;
+      cursor: pointer;
+      opacity: 0.8;
+      position: fixed;
+      bottom: 23px;
+      right: 28px;
+      width: 280px;
+    }
+    
+    /* The popup chat - hidden by default */
+    .chat-popup {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      width: 300px;
+      right: 15px;
+      border: 3px solid #f1f1f1;
+      z-index: 9;
+    }
+    
+    /* Add styles to the form container */
+    .form-container {
+      max-width: 300px;
+      padding: 10px;
+      background-color: white;
+    }
+    
+    /* Full-width textarea */
+    .form-container textarea {
+      width: 100%;
+      padding: 15px;
+      margin: 5px 0 22px 0;
+      border: none;
+      background: #f1f1f1;
+      resize: none;
+      min-height: 200px;
+    }
+    
+    /* When the textarea gets focus, do something */
+    .form-container textarea:focus {
+      background-color: #ddd;
+      outline: none;
+    }
+    
+    /* Set a style for the submit/send button */
+    .form-container .btn {
+      background-color: #04AA6D;
+      color: white;
+      padding: 16px 20px;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom:10px;
+      opacity: 0.8;
+    }
+    
+    /* Add a red background color to the cancel button */
+    .form-container .cancel {
+      background-color: red;
+    }
+    
+    /* Add some hover effects to buttons */
+    .form-container .btn:hover, .open-button:hover {
+      opacity: 1;
+    }
+    </style>
+    <button class="open-button" onclick="openForm()">Chat</button>
+    
+    <div class="chat-popup" id="myForm">
+      <form action="/action_page.php" class="form-container">
+        <!--<label for="msg"><b>Message</b></label>
+        <textarea placeholder="Type message.." name="msg" required></textarea>-->
+        <h1>Chat</h1>
+          <div id = "scroll" class="scroll">
+            New Chat Log :) 
+          </div>
+        <!--<button type="submit" class="btn">Send</button>-->
+        <button type="button" class="btn cancel" onclick="closeForm()">Close</button>
+      </form>
+    </div>
+</html>
+<script>
+
+  var connection = null;
+
+  var serverUrl;
+  serverUrl ="ws://" + window.location.hostname + ":8882";
+  
+  connection = new WebSocket(serverUrl);
+  connection.onopen = function (evt) {
+    console.log("open");
+  }
+
+  var cardIdx = 0;
+  var playerID = null;
+  var name;
+  connection.onmessage = function (evt) {
+    var msg;
+    msg = evt.data;
+
+    console.log("Message received: ");
+
+
+    // This is a hack for this example.
+    // The only time the WebPoker server sends data just
+    // to this client is at the beginging, when the connection
+    // is first made.  The first communication tells us which
+    // connection number we are, which is very import.
+    // So, we detect this situation where it is not game state
+
+    // Take the msg and turn it into a javascript object
+    const obj = JSON.parse(msg);
+    /*const flattenJSON = (obj = {}, res = {}, extraKey = '') => {
+    for(key in obj){
+        if(typeof obj[key] !== 'object'){
+          res[extraKey + key] = obj[key];
+        }else{
+          flattenJSON(obj[key], res, `${extraKey}${key}.`);
+        };
+    return res;
+    };
+    console.log(flattenJSON(obj));};*/
+    //prints on html for each round tried making turns but it prints wrong stuff
+    if( obj.text && !(obj.text === ""))
+    {
+      document.getElementById("scroll").innerText = document.getElementById("scroll").innerText + "\n" +  obj.text;
+    }
+
+    if(obj.round == 0)
+    {
+      document.getElementById("playerStats").innerText = "Name: " + document.getElementById("sendName").value + " Player ID: " + playerID + " Money: " 
+      + obj.players[playerID].money + ", CurrentBet:" + obj.dealer.totalBet + ", Pot:" + obj.dealer.pot + " Turn: It's Player " + obj.turn + "'s turn";
+      
+      var x = document.getElementById("button-row");
+      x.style.display = "block";
+      var y = document.getElementById("button-row2");
+      y.style.display = "none";
+
+      if(obj.turn == 0)
+      {
+        document.getElementById("textbox").innerText = "";
+      }
+      /*document.getElementById("textbox").innerText = document.getElementById("textbox").innerText + '\n\n' + "Round:" + "\n" + "Betting Round" + ", PlayerTurn:" + obj.turn
+      + ", CurrentBet:" + obj.dealer.totalBet + ", Pot:" + obj.dealer.pot;*/
+    }
+    if(obj.round == 1)
+    {
+      document.getElementById("playerStats").innerText = "Name: " + document.getElementById("sendName").value + " Player ID: " + playerID + " Money: " 
+      + obj.players[playerID].money + ", CurrentBet:" + obj.dealer.totalBet + ", Pot:" + obj.dealer.pot + " Turn: It's Player " + obj.turn + "'s turn";
+      
+      var x = document.getElementById("button-row2");
+      x.style.display = "block";
+      var y = document.getElementById("button-row");
+      y.style.display = "none";
+
+      if(obj.turn == 0)
+      {
+        document.getElementById("textbox").innerText = "";
+      }
+      /*document.getElementById("textbox").innerText = document.getElementById("textbox").innerText + '\n\n' + "Round:" + "\n" + "Draw Round"+ ", PlayerTurn:" + obj.turn
+      + ", CurrentBet:" + obj.dealer.totalBet + ", Pot:"  + obj.dealer.pot;*/
+    }
+    if(obj.round == 2)
+    {
+      document.getElementById("playerStats").innerText = "Name: " + document.getElementById("sendName").value + " Player ID: " + playerID + " Money: " 
+      + obj.players[playerID].money + ", CurrentBet:" + obj.dealer.totalBet + ", Pot:" + obj.dealer.pot + " Turn: It's Player " + obj.turn + "'s turn";
+      var x = document.getElementById("button-row");
+      x.style.display = "block";
+      var y = document.getElementById("button-row2");
+      y.style.display = "none";
+      if(obj.turn == 0)
+      {
+        document.getElementById("textbox").innerText = "";
+      }
+      /*document.getElementById("textbox").innerText = document.getElementById("textbox").innerText + '\n\n' + "Round:" + "\n" + "Second Betting Round"+ ", PlayerTurn:" + obj.turn
+      + ", CurrentBet:" + obj.dealer.totalBet + ", Pot:"  + obj.dealer.pot;*/
+    }
+    if(obj.round == 3 && obj.gameStarted == true)//This if statement is probably useless since it can all be added to below if statement but ill keep it for now
+    {
+      /*document.getElementById("playerStats").innerText = "Name: " + document.getElementById("sendName").value + " Player ID: " + playerID + " Money: " 
+      + obj.players[playerID].money + ", CurrentBet:" + obj.dealer.totalBet + ", Pot:" + obj.dealer.pot + " Turn: It's Player " + obj.turn + "'s turn";*/
+      
+      var x = document.getElementById("button-row");
+      x.style.display = "none";
+      var y = document.getElementById("button-row2");
+      y.style.display = "none";
+      var z = document.getElementById("startingAmount");
+      z.style.display = "block";
+      if(obj.turn == 0)
+      {
+        document.getElementById("textbox").innerText = "";
+      }
+      //document.getElementById("textbox").innerText = document.getElementById("textbox").innerText + '\n\n' + "Round:" + "\n" + "Showdown!";
+      /*var x = document.getElementById("ready");
+      x.style.display = "block";*/
+      
+    }
+    if(obj.round == 3 && obj.gameStarted == false)//this prints twice but since I made text box = results it doesn't show
+    {
+      document.getElementById("playerStats").innerText = "Name: " + document.getElementById("sendName").value + " Player ID: " + playerID + " Money: " + obj.players[playerID].money;
+      
+      var x = document.getElementById("button-row");
+      x.style.display = "none";
+      var y = document.getElementById("button-row2");
+      y.style.display = "none";
+      var z = document.getElementById("startingAmount");
+      z.style.display = "block";
+
+      if(obj.players[playerID].Won == true)
+      {
+        document.getElementById("playerStats").innerText = document.getElementById("playerStats").innerText + " Congratulations You Won!!!!!"; 
+      }
+      else
+      {
+        document.getElementById("playerStats").innerText = document.getElementById("playerStats").innerText + " You lost";
+      }
+      document.getElementById("textbox").innerText = '\n\n' + "Round:" + "\n" + "Showdown!";
+      document.getElementById("textbox").innerText = document.getElementById("textbox").innerText + '\n\n' + "Results " + msg;
+    }
+    /*if(obj.round == -1)//weird stuff is happening so I'm putting this for now
+    {
+        document.getElementById("textbox").innerText = document.getElementById("textbox").innerText + '\n\n' + "Results " + msg;
+    }*/
+    //document.getElementById("textbox").innerText = document.getElementById("textbox").innerText + '\n\n' + "Round:" + "\n" + obj.round;
+    if (!obj.players) {
+
+      playerID = obj.Id;
+      console.log("player ID = " + playerID);
+    }
+    else {
+
+      // process the game state
+      // this will just have one card change every time a new game state comes in.
+      // the term LUT means "look up table".  you will see it sometimes in code written last 
+      // century.
+
+      let numLUT = {
+        'ONE'   : '1',
+        'TWO'   : '2',
+        'THREE' : '3',
+        'FOUR'  : '4',
+        'FIVE'  : '5',
+        'SIX'   : '6',
+        'SEVEN' : '7',
+        'EIGHT' : '8',
+        'NINE'  : '9',
+        'TEN'   : 'T',
+        'JACK'  : 'J',
+        'QUEEN' : 'Q',
+        'KING'  : 'K',
+        'ACE'   : 'A'
+      }
+
+      for (let index = 0; index < obj.players[playerID].Cards.length; index++) {
+        const element = obj.players[playerID].Cards[index];
+
+
+        let cardVal = numLUT[element.value]
+
+        let card = "card" + (index + 1).toString();
+        
+      
+        
+        let svg = cardVal + element.suite.charAt(0) + ".svg"
+        //console.log(svg)
+        document.getElementById(card).src = svg
+      }
+
+      
+    }
+    console.log("the cardIdx is " + cardIdx)
+  }
+
+
+  const card1 = document.getElementById('card1');
+  const card2 = document.getElementById('card2');
+  const card3 = document.getElementById('card3');
+  const card4 = document.getElementById('card4');
+  const card5 = document.getElementById('card5');
+
+  let cardMap = new Map([[card1,false],[card2,false],[card3,false],[card4,false],[card5,false]]);
+
+
+  //Iterate over the map and attach the event listener to each card and 
+  //flip the bool with each click
+  for(let [key,value] of cardMap){
+    key.addEventListener('click', event =>{
+      cardMap.set(key, !cardMap.get(key));
+      if(cardMap.get(key) == true){key.style.outline = "5px solid green";}
+      else{ key.style.outline = "";}
+      console.log(cardMap);
+    })
+  }
+
+  //Chat window functions
+  function openForm() 
+  {
+  document.getElementById("myForm").style.display = "block";
+  }
+
+  function closeForm() 
+  {
+  document.getElementById("myForm").style.display = "none";
+  }
+
+  function getClickedCards(map){
+    let out = [];
+    let index = 0;
+    //console.log(map);
+    for(let [key, value] of map){
+      //console.log(value);
+      if(value === true){out.push(index);}
+      index++
+    }
+    //console.log(out);
+    return out;
+  }
+
+  //Below functions are used to make calls through the websocket to call the equivalent Java code
+  function ready(){
+    var msg = {
+      event: "READY",
+      playerID: playerID,
+      payload: null
+    };
+    var x = document.getElementById("ready");
+    x.style.display = "none";
+    var x = document.getElementById("playerStats");
+    x.style.display = "block";
+    document.getElementById("playerStats").innerText = "Please wait for game to start...";
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+  function startAmount(val){
+    var msg = {
+      event: "STARTAMOUNT",
+      playerID: playerID,
+      payload: document.getElementById("startingamount").value,
+    };
+    var x = document.getElementById("startingAmount");
+    x.style.display = "none";
+    var y = document.getElementById("ready");
+    y.style.display = "block";
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+  function call(){
+    var msg = {
+      event: "CALL",
+      playerID: playerID,
+      name: document.getElementById("sendName").value,
+      payload: null
+    };
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+
+  /*function bet(){
+    //bet and check dissapear after initial bet press
+    var x = document.getElementById("bet");
+    var y = document.getElementById("check");
+    x.style.display = "none";
+    y.style.display = "none";
+    var msg = {
+      event: "BET",
+      playerID: playerID,
+      name: document.getElementById("sendName").value,
+      payload: null
+    };
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+  //added check
+  function check(){
+    var msg = {
+      event: "CHECK",
+      playerID: playerID,
+      name: document.getElementById("sendName").value,
+      payload: null
+    };
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+*/
+  function raise(val){
+    var msg = {
+      event: "RAISE",
+      playerID: playerID,
+      payload: document.getElementById("raise").value,
+    };
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+
+  function fold(){
+    var msg = {
+      event: "FOLD",
+      playerID: playerID,
+      name: document.getElementById("sendName").value,
+      payload: null
+    };
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+
+  //added draw
+  function draw(){
+    var msg = {
+      event: "DRAW",
+      playerID: playerID,
+      name: document.getElementById("sendName").value,
+      payload: getClickedCards(cardMap).toString()
+    };
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+
+  function stand(){
+    var msg = {
+      event: "STAND",
+      playerID: playerID,
+      name: document.getElementById("sendName").value,
+      payload: null
+    };
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+  
+  function send() {
+
+    var msg = {
+      event: "TEXT",
+      text: name + "(" + playerID +"): " + document.getElementById("send_text").value,
+    };
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+  function sendName() {
+
+    var msg = {
+      event: "NAME",
+      name: document.getElementById("sendName").value,
+      playerID: playerID,
+      payload: null
+    };
+    name = document.getElementById("sendName").value;
+    var x = document.getElementById("nameInput");
+    x.style.display = "none";
+    var y = document.getElementById("startingAmount");
+    y.style.display = "block";
+    connection.send(JSON.stringify(msg));
+    console.log(JSON.stringify(msg));
+  }
+
+    // this shows how to hid html elements.
+    // like when the name is entered
+    //  it might be better to hide after the server has accepted it
+    // but this is just a demonstration
+
+    /*var x = document.getElementById("nameInput");
+    if (x.style.display === "none") {
+      x.style.display = "block";
+    } else {;
+      x.style.display = "none";
+    }*/
+    
+  
+
+</script>

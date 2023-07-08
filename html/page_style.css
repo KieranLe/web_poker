@@ -1,0 +1,66 @@
+body {
+  background-color: lightblue;
+}
+
+h1 {
+  color: navy;
+  margin-left: 20px;
+}
+
+#button-row{
+  display: none;
+  align-items: center;
+  border: 1px solid black;
+  background-color: lightblue;
+  padding-top: 50px;
+  padding-right: 30px;
+  padding-bottom: 50px;
+  padding-left: 300px;
+}
+
+#button-row2{
+  display: none;
+  align-items: center;
+  border: 1px solid black;
+  background-color: lightblue;
+  padding-top: 50px;
+  padding-right: 30px;
+  padding-bottom: 50px;
+  padding-left: 300px;
+}
+#ready{
+  display: none;
+  align-items: center;
+  border: 1px solid black;
+  background-color: lightblue;
+  padding-top: 50px;
+  padding-right: 30px;
+  padding-bottom: 50px;
+  padding-left: 300px;
+}
+#startingAmount{
+  display: none;
+  align-items: center;
+  border: 1px solid black;
+  background-color: lightblue;
+  padding-top: 50px;
+  padding-right: 30px;
+  padding-bottom: 50px;
+  padding-left: 300px;
+}
+#nameInput{
+  display: flexbox;
+  align-items: center;
+  border: 1px solid black;
+  background-color: lightblue;
+  padding-top: 50px;
+  padding-right: 30px;
+  padding-bottom: 50px;
+  padding-left: 300px;
+}
+
+
+
+.button{
+  padding: 15px 100px; 
+}

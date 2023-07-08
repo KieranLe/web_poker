@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": "../builtInTopics"
+		}
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "interactive"
+	}
+}
