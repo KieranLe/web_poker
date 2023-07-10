@@ -15,8 +15,6 @@ public class Player {
     public Card Cards[] = new Card[5];
     //for printing on html
     boolean Won = false;
-    //private transient Dealer deal = new Dealer();
-    //removed transient on money for testing purposes
     int money;
     //keeps track of players that have folded
     boolean folded = false;
@@ -33,10 +31,7 @@ public class Player {
     public Player(int id,Dealer deal) {
         Id = id;
         Name = "not set";
-        //Cards = new Card[5];
-        //deal.createHand(Cards);
-        
-        //System.out.println("Player ID " + Id + " has cards: " + Cards[0].value + " " + Cards[1].value + " "+ Cards[2].value + " "+ Cards[3].value + " "+ Cards[4].value + " ");
+       
     }
  
 
@@ -55,27 +50,11 @@ public class Player {
         deal.draw(Cards, cardIndex);
         System.out.println("Player ID" + Id + "has drawed");
     }
-    //Betting functions
-    /*public void bet(Dealer deal)
-    {
-        //amount will eventually take in a certain amount from events but for now just 10
-        int amount = 20;
-        deal.setBet(amount);
-        money = 100 - deal.totalBet;
-        System.out.println("Player ID" + Id + "has betted");
-    }
-    public void playerCheck()
-    {
-        //insert code here ;-;
-        //actually don't think anything needs to go here.Maybe
-        System.out.println("Player ID" + Id + "has checked");
-    }*/
-    //just realized check and call are kind of the same. and bet and raise are too
+
     public int playerCall(Dealer deal)
     {
-        //this might be wrong
+       
         //force players to fold if they cant match that amount for iteration 2 maybe
-        //deal.totalBet-money;
         //if statement will be used to check if current player money can reach current betting amount. If not it will go as high as it can.
         int diff = money - (startingMoney -deal.totalBet);
         if(deal.totalBet>=startingMoney)
@@ -95,7 +74,6 @@ public class Player {
     public void playerRaise(int amount,Dealer deal)
     {
         //set to 20 in game until specific amounts of money are available
-        //this might be wrong 
         int diff;
         if(deal.totalBet+ amount>=startingMoney)
         {
@@ -106,7 +84,6 @@ public class Player {
             }
             //diff is 0 because if you have a higher amount than current money in player than you'll just allocate amount to the pot.
             deal.setBet(amount);
-            //prob smarter way to do all this but cant think rn
             amount = money;
             money = 0;
             deal.pot += (diff + amount);
@@ -128,7 +105,7 @@ public class Player {
         folded = true;
         System.out.println("Player ID" + Id + "has folded");
     }
-    //for unittests
+    //for unit test
     public boolean getPlayerFoldStatus()
     {
         return folded;

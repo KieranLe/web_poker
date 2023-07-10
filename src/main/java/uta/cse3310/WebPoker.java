@@ -190,7 +190,7 @@ public class WebPoker extends WebSocketServer {
             game.round =-1;
             System.out.println(" second : the game state" + game.exportStateAsJSON());
           }
-          //Print not part of original just helpful for me
+
           System.out.println("the game state" + game.exportStateAsJSON());
         }
 
@@ -241,7 +241,6 @@ public class WebPoker extends WebSocketServer {
     setConnectionLostTimeout(100);
     setNumPlayers(-1);
     // once a second call update
-    // may want to start this in the main() function??
     new java.util.Timer().scheduleAtFixedRate(new upDate(), 0, 1000);
   }
 

@@ -61,8 +61,6 @@ public class Dealer {
 
     public void createHand(Card Cards[])
     {
-        // fillDeck();
-
         ArrayList<Integer> randomCard = new ArrayList<>();
         for ( int i = 0; i < 52; i++ )
         {

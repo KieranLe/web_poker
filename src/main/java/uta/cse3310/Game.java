@@ -48,11 +48,6 @@ public class Game {
         // and does whatever else is needed to remove
         // the player from the game.
         players.get(playerid).left = true;
-        /*if(players.get(playerid).folded == true)
-        {
-            players.get(playerid).folded = false;
-            playersFolded--;
-        }*/
         currentPlayers--;
         playersLeft++;
     }
@@ -126,13 +121,6 @@ public class Game {
                     System.out.println("Second betting round done :)");
                 }
             }
-            /*else if(round == 3 && gameStarted == true)
-            {
-                showdown();
-                tempState=true;
-                gameStarted = false;
-                System.out.println("Game is done :)");
-            }*/
         }
 
     }
@@ -235,16 +223,6 @@ public class Game {
         //money will eventually change for state of game sent after clicking button
         //tf is true if the event actually gets chosen
         boolean tf = false;
-        /*if(choice.event == UserEventType.BET)//Will change for betting accordingly
-        {
-            players.get(turn).bet(dealer);
-            turn++;
-        }
-        else if(choice.event == UserEventType.CHECK)//Will change for betting accordingly
-        {
-            players.get(turn).playerCheck();
-            turn++;
-        }*/
         if(choice.event == UserEventType.CALL)//Will change for betting accordingly
         {
             players.get(turn).playerCall(dealer);
@@ -377,13 +355,11 @@ public class Game {
         for(int x =0;x<winners.size();x++)
         {
             players.get(winners.get(x)).money += amountWon;
-            players.get(winners.get(x)).Won = true;
-            //System.out.println("Winners: Player" + players.get(winners.get(x)).Id + " won:" + amountWon);
+            players.get(winners.get(x)).Won = true;    
         }
         dealer.totalBet = 0;
         dealer.pot = 0;
-        //rounds becomes -1 just so state of game doesn't keep printing and to reset game
-        //round = -1;
+
         turn = 0;
         choice.event = UserEventType.NULL;
     }

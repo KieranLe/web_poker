@@ -14,7 +14,7 @@ import uta.cse3310.Card;
 
 public class Hand
 {
-    //private transient int i=10;
+
     // marked transient they will not serialized / deserialized
 
     public Card[] cards;
@@ -104,7 +104,7 @@ public class Hand
 				return C2.value.compareTo(C1.value);
 			}
 		});
-		//Arrays.sort(cards, (a, b) -> b.value.compareTo(a.value));
+		
 	}
 
 	public HandType GetHandType()
@@ -330,16 +330,6 @@ public class Hand
 
 	public int HighCard()
 	{
-		//In poker, if the hand is of no type above this then it defaults to this
-		//This can also happen in hand rank ties
-
-		//In this case, the highest value card is chosen  
-
-
-
-		//The sorting just assumed the first card in the array is the highest
-		//So we have to do an explicit check for ACE
-		//This caused a lot of errors until I remembered I did this
 
 		if(this.Has(Card.Value.ACE))
 		{
